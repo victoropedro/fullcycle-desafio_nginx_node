@@ -1,0 +1,53 @@
+version: '3'
+
+services:
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: .
+    image: victorpedro/nginx:desafio
+    container_name: nginx
+    restart: always
+    ports:
+      - "8080:80"
+    depends_on:
+      - node
+    networks:
+      - minharede
+
+  node:
+    build:
+      context: ./node
+      dockerfile: .
+    image: victorpedro/node:desafio
+    container_name: node
+    entrypoint: dockerize -wait tcp://db:3306 -timeout 20s docker-entrypoint.sh node index.js
+    restart: always
+    # volumes:
+    #   - ./node:/usr/src/app
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+    networks:
+      - minharede
+
+  db:
+    image: mysql:5.7
+    command: --innodb-use-native-aio=0
+    container_name: db
+    restart: always
+    tty: true
+    # volumes:
+    #   - ./mysql:/var/lib/mysql
+    environment:
+      - MYSQL_DATABASE=nodedb
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_ROOT_USER=root
+    networks:
+      - minharede
+
+networks:
+  minharede:
+    driver: bridge
